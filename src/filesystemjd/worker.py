@@ -17,6 +17,11 @@ class Worker:
         - unique_key (str): some unique (by your filesystem's definition of unique) identifier for this worker. We will create the $signal_dir/worker_$unique_key directory
         """
 
+        # check to see if the process has already concluded
+        self.dead_path = Path( signal_dir ) / "dead"
+        if self.dead_path.exists():
+            raise Exception( "This party is already over" )
+
         # create directory
         self.path = Path( "{}/worker_{}/".format(signal_dir, unique_key) )
         if self.path.exists():

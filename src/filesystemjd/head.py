@@ -134,3 +134,5 @@ class Head:
                 f.write( "" )
                 f.close()
         self.working_nodes.clear()
+
+        create_file( str(self.path / "dead") )
