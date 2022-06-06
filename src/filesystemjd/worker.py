@@ -1,11 +1,11 @@
 from filesystemjd import signals
-from filesystemjd.signals import create_fileprefix, create_wildcard_for_direction
+from filesystemjd.signals import create_fileprefix, create_wildcard_for_direction, parse_filename
 from filesystemjd.util import create_file, attempt_to_create_a_directory
 
 from pathlib import Path
 import os
 import time
-
+import glob
 
 class Worker:
     def __init__( self,
@@ -59,6 +59,32 @@ class Worker:
             raise Exception( "failed to create: " + str(filepath) )
         
 
+    def query_for_job( self ):
+        x = glob.glob( str(self.path) + "/" + create_wildcard_for_direction( signals.head_to_worker() ) )
+        if len(x) == 0:
+            #time.sleep( sleep_s )
+            return None, None, None
+
+        more_messages = (len(x) > 1)
+
+        # just read the first one
+        filename = x[0]
+        direction, task, owner = parse_filename( filename )
+
+        # let the head node finish writing, if needed
+        time.sleep( 0.1 )
+
+        with open( filename, 'r' ) as f:
+            contents = f.read()
+            f.close()
+
+        if owner == signals.worker_will_delete():
+            os.remove( filename )
+
+        spin_down = task == signals.spin_down_task()
+
+        return contents, spin_down, more_messages
+
     def wait_for_job( self, sleep_s = 0 ):
         """
         Parameters:
@@ -69,33 +95,12 @@ class Worker:
         - boolean: If true, there are more messages waiting
         """
         while True:
-            x = glob.glob(
-                create_wildcard_for_direction( signals.head_to_worker() ),
-                root_dir = self.path
-            )
-            if len(x) == 0:
+            a, b, c = self.query_for_job()
+            if a == None and b == None and c == None:
                 time.sleep( sleep_s )
                 continue
-
-            more_messages = (len(x) > 1)
-
-            # just read the first one
-            filename = x[0]
-            direction, task, owner = parse_filename( filename )
-            
-            # let the head node finish writing, if needed
-            time.sleep( 0.1 )
-
-            with open( filename, 'r' ) as f:
-                contents = f.read()
-                f.close()
-
-            if owner == worker_will_delete():
-                os.remove( filename )
-
-            spin_down = task == signals.spin_down_task()
-
-            return contents, spin_down, more_messages
+            else:
+                return a, b, c
 
     def send_results_of_job( self, results: str ):
         """

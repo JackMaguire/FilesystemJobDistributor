@@ -31,8 +31,33 @@ def run_test1():
     assert h.n_available_workers() == 2
     assert h.n_busy_workers() == 1
 
+    job_found = False
+    job_node = None
+    contents, spin_down, more_messages = w1.query_for_job()
+    if contents is not None:
+        assert contents == "Job 1"
+        job_found = True
+        job_node = w1
+    contents, spin_down, more_messages = w2.query_for_job()
+    if contents is not None:
+        assert contents == "Job 1"
+        job_found = True
+        job_node = w2
+    contents, spin_down, more_messages = w3.query_for_job()
+    if contents is not None:
+        assert contents == "Job 1"
+        job_found = True
+        job_node = w3
+    assert job_found
+    job_node.send_results_of_job( "Done with job 1" ) 
 
+    job_results = h.wait_for_finished_jobs()
+    assert len(job_results) == 1
+    assert job_results[0] == "Done with job 1"
 
+    assert h.total_n_workers() == 3
+    assert h.n_available_workers() == 3
+    assert h.n_busy_workers() == 0
 
 if __name__ == '__main__':
     run_test1()

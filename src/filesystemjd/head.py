@@ -80,3 +80,32 @@ class Head:
             f.close()
 
         self.working_nodes.add( worker_path )
+
+    def look_for_finished_jobs( self ):
+        x = glob.glob( str(self.path) + "/worker_*/" + create_wildcard_for_task( task=signals.job_task(), direction=signals.worker_to_head() ) )
+        job_results = []
+
+        for filename in x:
+            _, _, owner = parse_filename( filename )
+            worker_path = os.path.dirname( filename )
+            if not worker_path in self.working_nodes:
+                raise Exception( "Nonworker reported a job:", worker_path )
+            self.working_nodes.remove( worker_path )
+            self.available_nodes.add( worker_path )
+ 
+            with open( filename, 'r' ) as f:
+                contents = f.read()
+                job_results.append( contents )
+                f.close()
+
+            if owner == signals.head_will_delete():
+                os.remove( filename )
+
+        return job_results
+
+    def wait_for_finished_jobs( self, sleep_s = 0 ):
+        while True:
+            job_results = self.look_for_finished_jobs()
+            if len(job_results) > 0:
+                return job_results
+            time.sleep( sleep_s )
