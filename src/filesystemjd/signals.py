@@ -10,14 +10,17 @@ def worker_to_head() -> str:
 
 # Slot 2: Task
 
-def new_worker_task() -> str:
+def new_worker() -> str:
     return "new_worker"
 
 def spin_down_task() -> str:
     return "spin_down"
 
-def new_job_task() -> str:
+def job_task() -> str:
     return "job"
+
+def new_message_task() -> str:
+    return "message"
 
 # Slot 3: Ownership
 
@@ -39,7 +42,10 @@ def create_fileprefix( direction: str, task: str, owner: str  ):
     return "{}.{}.{}".format( direction, task, owner )
 
 def create_wildcard_for_direction( direction: str ):
-    return [filename for filename in os.listdir(folder) if filename.startswith('spam')]
+    return create_fileprefix( direction=direction, task="*", owner="*" )
+
+def create_wildcard_for_task( task:str, direction: str = worker_to_head() ):
+    return create_fileprefix( direction=direction, task=task, owner="*" )
 
 def parse_filename( filename ):
     bn = os.path.basename( filename )

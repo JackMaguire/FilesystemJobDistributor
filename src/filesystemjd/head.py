@@ -1,0 +1,57 @@
+from filesystemjd import signals
+from filesystemjd.signals import create_fileprefix, create_wildcard_for_direction, create_wildcard_for_task, parse_filename
+from filesystemjd.util import create_file, attempt_to_create_a_directory
+
+from pathlib import Path
+import os
+import time
+
+import glob
+
+class Head:
+    def __init__( self, signal_dir: str ):
+        self.path = Path( signal_dir )
+
+        if not self.path.exists():
+            attempt_to_create_a_directory( self.path )
+
+        if not self.path.is_dir():
+            raise Exception( "path is not recognaized as a dir: {}".format( str(self.path) ) )
+
+        self.working_nodes = set()
+        self.available_nodes = set()
+
+
+    def total_n_workers( self ):
+        return len(self.working_nodes) + len(self.available_nodes)
+
+
+    def look_for_new_workers( self ):
+        x = glob.glob( str(self.path) + "/worker_*/" + create_wildcard_for_task( task=signals.new_worker(), direction=signals.worker_to_head() ) )
+        for filename in x:
+            _, _, owner = parse_filename( filename )
+            worker_path = os.path.dirname( filename )
+            self.available_nodes.add( worker_path )
+            print( "Adding new worker: ", worker_path )
+            if owner == signals.head_will_delete():
+                os.remove( filename )
+
+    def look_for_retiring_workers( self ):
+        x = glob.glob( str(self.path) + "/worker_*/" + create_wildcard_for_task( task=signals.spin_down_task(), direction=signals.worker_to_head() ) )
+        for filename in x:
+            #_, _, owner = parse_filename( filename )
+            worker_path = os.path.dirname( filename )
+
+            if worker_path in self.available_nodes:
+                self.available_nodes.remove( worker_path )
+            elif worker_path in self.working_nodes:
+                raise Exception( "Worker {} retired while working on a job".format(worker_path) )
+            else:
+                raise Exception( "Unregistered worker {} retired".format(worker_path) )
+
+            # should we delete the whole directory? Or just this file?
+            os.rmdir( worker_path )
+
+    def update_workers( self ):
+        self.look_for_new_workers()
+        self.look_for_retiring_workers()
