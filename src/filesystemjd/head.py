@@ -25,6 +25,11 @@ class Head:
     def total_n_workers( self ):
         return len(self.working_nodes) + len(self.available_nodes)
 
+    def n_available_workers( self ):
+        return len(self.available_nodes)
+
+    def n_busy_workers( self ):
+        return len(self.working_nodes)
 
     def look_for_new_workers( self ):
         x = glob.glob( str(self.path) + "/worker_*/" + create_wildcard_for_task( task=signals.new_worker(), direction=signals.worker_to_head() ) )
@@ -55,3 +60,23 @@ class Head:
     def update_workers( self ):
         self.look_for_new_workers()
         self.look_for_retiring_workers()
+
+
+    def submit_job( self, job_str: str ):
+        if self.n_available_workers() == 0:
+            raise Exception( "Asked to submit a job despite there being no available nodes. Please query n_available_workers() before submitting." )
+
+        worker_path = self.available_nodes.pop()
+        
+        filename = create_fileprefix(
+            direction = signals.head_to_worker(),
+            task = signals.job_task(),
+            owner = signals.worker_will_delete()
+        ) + ".txt"
+        filepath = worker_path + "/" + filename
+
+        with open( filepath, 'w' ) as f:
+            f.write( job_str )
+            f.close()
+
+        self.working_nodes.add( worker_path )

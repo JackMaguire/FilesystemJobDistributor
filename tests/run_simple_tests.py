@@ -15,11 +15,21 @@ def run_test1():
     h.update_workers()
 
     assert h.total_n_workers() == 2
+    assert h.n_available_workers() == 2
+    assert h.n_busy_workers() == 0
+
+    h.submit_job( "Job 1" )
+
+    assert h.total_n_workers() == 2
+    assert h.n_available_workers() == 1
+    assert h.n_busy_workers() == 1
 
     w3 = Worker( signal_dir=signal_dir, unique_key="w3" )
     h.update_workers()
 
     assert h.total_n_workers() == 3
+    assert h.n_available_workers() == 2
+    assert h.n_busy_workers() == 1
 
 
 
