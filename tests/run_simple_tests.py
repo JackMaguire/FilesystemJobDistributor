@@ -59,5 +59,39 @@ def run_test1():
     assert h.n_available_workers() == 3
     assert h.n_busy_workers() == 0
 
+    h.update_workers()
+
+    assert h.total_n_workers() == 3
+    assert h.n_available_workers() == 3
+    assert h.n_busy_workers() == 0
+
+    w2.spin_self_down()
+    h.update_workers()
+
+    assert h.total_n_workers() == 2
+    assert h.n_available_workers() == 2
+    assert h.n_busy_workers() == 0
+
+    w1.spin_self_down()
+    h.update_workers()
+
+    assert h.total_n_workers() == 1
+    assert h.n_available_workers() == 1
+    assert h.n_busy_workers() == 0
+    
+    h.spin_all_down()
+    contents, spin_down, more_messages = w3.query_for_job()
+    assert spin_down
+
+    assert h.total_n_workers() == 0
+    assert h.n_available_workers() == 0
+    assert h.n_busy_workers() == 0
+
+    h.update_workers()
+
+    assert h.total_n_workers() == 0
+    assert h.n_available_workers() == 0
+    assert h.n_busy_workers() == 0
+
 if __name__ == '__main__':
     run_test1()

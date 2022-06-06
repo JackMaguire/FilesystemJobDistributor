@@ -44,7 +44,7 @@ class Head:
     def look_for_retiring_workers( self ):
         x = glob.glob( str(self.path) + "/worker_*/" + create_wildcard_for_task( task=signals.spin_down_task(), direction=signals.worker_to_head() ) )
         for filename in x:
-            #_, _, owner = parse_filename( filename )
+            _, _, owner = parse_filename( filename )
             worker_path = os.path.dirname( filename )
 
             if worker_path in self.available_nodes:
@@ -55,7 +55,11 @@ class Head:
                 raise Exception( "Unregistered worker {} retired".format(worker_path) )
 
             # should we delete the whole directory? Or just this file?
-            os.rmdir( worker_path )
+            #os.rmdir( worker_path )
+
+            if owner == signals.head_will_delete():
+                os.remove( filename )
+
 
     def update_workers( self ):
         self.look_for_new_workers()
@@ -109,3 +113,24 @@ class Head:
             if len(job_results) > 0:
                 return job_results
             time.sleep( sleep_s )
+
+    def spin_all_down( self ):
+        filename = create_fileprefix(
+            direction = signals.head_to_worker(),
+            task = signals.spin_down_task(),
+            owner = signals.worker_will_delete()
+        ) + ".txt"
+
+        for w in self.available_nodes:
+            filepath = w + "/" + filename
+            with open( filepath, 'w' ) as f:
+                f.write( "" )
+                f.close()
+        self.available_nodes.clear()
+
+        for w in self.working_nodes:
+            filepath = w + "/" + filename
+            with open( filepath, 'w' ) as f:
+                f.write( "" )
+                f.close()
+        self.working_nodes.clear()
