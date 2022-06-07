@@ -76,7 +76,7 @@ class Worker:
         filename = x[0]
         direction, task, owner = parse_filename( filename )
 
-        # let the head node finish writing, if needed
+        # let the other node finish writing, if needed
         time.sleep( 0.1 )
 
         with open( filename, 'r' ) as f:

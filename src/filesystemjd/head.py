@@ -5,7 +5,6 @@ from filesystemjd.util import create_file, attempt_to_create_a_directory
 from pathlib import Path
 import os
 import time
-
 import glob
 
 class Head:
@@ -97,6 +96,9 @@ class Head:
             self.working_nodes.remove( worker_path )
             self.available_nodes.add( worker_path )
  
+            # let the other node finish writing, if needed
+            time.sleep( 0.01 )
+
             with open( filename, 'r' ) as f:
                 contents = f.read()
                 job_results.append( contents )
