@@ -64,7 +64,7 @@ class Worker:
             raise Exception( "failed to create: " + str(filepath) )
         
 
-    def query_for_job( self ):
+    def query_for_job( self, safety_sleep_window: float = 0.1 ):
         x = glob.glob( str(self.path) + "/" + create_wildcard_for_direction( signals.head_to_worker() ) )
         if len(x) == 0:
             #time.sleep( sleep_s )
@@ -77,7 +77,7 @@ class Worker:
         direction, task, owner = parse_filename( filename )
 
         # let the other node finish writing, if needed
-        time.sleep( 0.1 )
+        time.sleep( safety_sleep_window )
 
         with open( filename, 'r' ) as f:
             contents = f.read()

@@ -84,7 +84,7 @@ class Head:
 
         self.working_nodes.add( worker_path )
 
-    def look_for_finished_jobs( self ):
+    def look_for_finished_jobs( self, safety_sleep_window: float = 0.01 ):
         x = glob.glob( str(self.path) + "/worker_*/" + create_wildcard_for_task( task=signals.job_task(), direction=signals.worker_to_head() ) )
         job_results = []
 
@@ -97,7 +97,7 @@ class Head:
             self.available_nodes.add( worker_path )
  
             # let the other node finish writing, if needed
-            time.sleep( 0.01 )
+            time.sleep( safety_sleep_window )
 
             with open( filename, 'r' ) as f:
                 contents = f.read()
