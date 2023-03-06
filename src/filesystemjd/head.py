@@ -65,6 +65,10 @@ class Head:
         self.look_for_retiring_workers()
 
 
+    def broadcast_job_to_all_available_workers( self, job_str: str ):
+        while self.n_available_workers() > 0:
+            self.submit_job( job_str )
+        
     def submit_job( self, job_str: str ):
         if self.n_available_workers() == 0:
             raise Exception( "Asked to submit a job despite there being no available nodes. Please query n_available_workers() before submitting." )
