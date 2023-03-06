@@ -1,2 +1,2 @@
 from .worker import Worker
-import head
+from .head import Head
