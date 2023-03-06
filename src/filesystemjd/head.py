@@ -8,9 +8,10 @@ import time
 import glob
 
 class Head:
-    def __init__( self, signal_dir: str ):
+    def __init__( self, signal_dir: str, greeting_message: str = None ):
         self.path = Path( signal_dir )
-
+        self.greeting_message = greeting_message
+        
         if not self.path.exists():
             attempt_to_create_a_directory( self.path )
 
@@ -35,7 +36,11 @@ class Head:
         for filename in x:
             _, _, owner = parse_filename( filename )
             worker_path = os.path.dirname( filename )
-            self.available_nodes.add( worker_path )
+            if self.greeting_message is not None:
+                self._send_job_to_worker( self.greeting_message, worker_path )
+                self.working_nodes.add( worker_path )
+            else:
+                self.available_nodes.add( worker_path )
             print( "Adding new worker: ", worker_path )
             if owner == signals.head_will_delete():
                 os.remove( filename )
@@ -74,7 +79,11 @@ class Head:
             raise Exception( "Asked to submit a job despite there being no available nodes. Please query n_available_workers() before submitting." )
 
         worker_path = self.available_nodes.pop()
-        
+        self._send_job_to_worker( job_str, worker_path )
+        self.working_nodes.add( worker_path )
+        pass
+            
+    def _send_job_to_worker( self, job_str: str, worker_path: str ):
         filename = create_fileprefix(
             direction = signals.head_to_worker(),
             task = signals.job_task(),
@@ -85,8 +94,8 @@ class Head:
         with open( filepath, 'w' ) as f:
             f.write( job_str )
             f.close()
-
-        self.working_nodes.add( worker_path )
+            pass
+        pass
 
     def look_for_finished_jobs( self, safety_sleep_window: float = 0.01 ):
         x = glob.glob( str(self.path) + "/worker_*/" + create_wildcard_for_task( task=signals.job_task(), direction=signals.worker_to_head() ) )
