@@ -90,17 +90,18 @@ class Worker:
 
         return contents, spin_down, more_messages
 
-    def wait_for_job( self, sleep_s = 0 ):
+    def wait_for_job( self, sleep_s = 0, safety_sleep_window: float = 0.1 ):
         """
         Parameters:
         - sleep_s: the number of seconds to sleep between checks for new messages. Defaults to 0. Type can be anything accepted by time.sleep()
+        - safety_sleep_window: the number of seconds to sleep before opening the message from Head
         Returns:
         - string: the message for the new job
         - boolean: If the bool is true, then the simulation is over and it is time to shutdown
         - boolean: If true, there are more messages waiting
         """
         while True:
-            a, b, c = self.query_for_job()
+            a, b, c = self.query_for_job( safety_sleep_window=safety_sleep_window )
             if a == None and b == None and c == None:
                 time.sleep( sleep_s )
                 continue
