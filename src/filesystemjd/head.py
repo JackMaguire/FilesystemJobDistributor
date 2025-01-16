@@ -122,7 +122,8 @@ class Head:
 
         return job_results
 
-    def wait_for_finished_jobs( self, sleep_s = 0, update_workers_while_waiting = True, raise_exception_if_no_workers = True, safety_sleep_window: float = 0.01 ):
+    def wait_for_finished_jobs( self, sleep_s = 0, update_workers_while_waiting = True, raise_exception_if_no_workers = True, safety_sleep_window: float = 0.01, max_seconds = None ):
+        start = time.time()
         while True:
             job_results = self.look_for_finished_jobs(safety_sleep_window=safety_sleep_window)
             if len(job_results) > 0:
@@ -131,6 +132,8 @@ class Head:
                 self.update_workers()
                 if self.total_n_workers() == 0 and raise_exception_if_no_workers:
                     raise Exception( "All workers died" )
+            if max_seconds is not None and (time.time() - start) > max_seconds:
+                raise Exception( "Reached Timeout. Maybe all workers are dead?" )
             time.sleep( sleep_s )
 
     def spin_all_down( self ):
